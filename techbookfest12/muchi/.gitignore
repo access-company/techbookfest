@@ -1,0 +1,9 @@
+.DS_Store
+*~
+*.bak
+*.yml.orig
+#*.erb.orig
+rubygems/*
+tmp/*
+muchi-pdf/*
+muchi-md/*
