@@ -127,7 +127,16 @@ ViewModelという呼び方が適切かどうかは諸説ありつつ、コン�
 
 ## Kotlin Coroutines Flow
 
-執筆中
+ここまではOSを限定せず記述しましたが、ここからは実際にKotlin Coroutine Flowを用いていきます。
+まず、説明です。Kotlin Coroutine Flowとは、Kotlin Coroutinesの新しい非同期処理用ライブラリです。
+RxやPromiseに似た記述ができ、コールドストリームであることが特徴です。
+
+### コールドストリーム
+
+Subscribeされたら初めて動きだす、Observableなストリームです。ストリームとは、データを連続して送り出す型を言います。
+
+続きは以下
+https://qiita.com/tonionagauzzi/items/12aa1a4400256cece72c
 
 ## Kotlin Multiplatform MobileでUI以外を実装する
 
