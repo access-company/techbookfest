@@ -4,9 +4,9 @@
 
 == 登場人物
 
-//sideimage[chara_lala_big][20mm][side=L,sep=7mm,border=on]{
+//sideimage[chara_ema_big][20mm][side=L,sep=7mm,border=on]{
 //noindent
-@<strong>{ららちゃん}
+@<strong>{エマちゃん}
 
  * エンジニア1年生
  * 睡眠は1日9時間
@@ -16,7 +16,7 @@
 //noindent
 @<strong>{アメさん}
 
- * ゆるふわサバサバポジティブなエンジニア
+ * ゆるふわだけどサバサバなエンジニア（※要相談）
  * ノリが軽いので、いろんな業務を引き受けがち
 //}
 
@@ -25,12 +25,12 @@
 @<strong>{ムチさん}
 
  * 使うものにはとことんこだわりたい寡黙なエンジニア
- * 意外とスポーツマン
+ * 意外とスポーツマンでスキューバダイビングのライセンス持ち
 //}
 
-//sideimage[chara_pm_big][20mm][side=L,sep=7mm,border=on]{
+//sideimage[chara_maria_big][20mm][side=L,sep=7mm,border=on]{
 //noindent
-@<strong>{PM}
+@<strong>{マリアさん}
 
  * 5年前にエンジニアから転向したプロジェクトマネージャー
  * スプレッドシートよりExcel派
