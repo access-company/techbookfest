@@ -128,15 +128,93 @@ ViewModelという呼び方が適切かどうかは諸説ありつつ、コン�
 ## Kotlin Coroutines Flow
 
 ここまではOSを限定せず記述しましたが、ここからは実際にKotlin Coroutine Flowを用いていきます。
+
 まず、説明です。Kotlin Coroutine Flowとは、Kotlin Coroutinesの新しい非同期処理用ライブラリです。
+
 RxやPromiseに似た記述ができ、コールドストリームであることが特徴です。
 
 ### コールドストリーム
 
 Subscribeされたら初めて動きだす、Observableなストリームです。ストリームとは、データを連続して送り出す型を言います。
 
+上司が来たら初めて働き出すぐうたら社員をイメージしてみてください。上司がいる間は、状況の変化をちゃんと逐次報告します。1人の上司にのみ報告するというのも特徴です。そして、上司がいなくなったらすぐに自分から働くのをやめます。
+
+社員だとどうかなと思うコールドな働き方ですが、プログラムとして、必要ないときに働かないのは実は強力な利点なんです。必要なときだけリソースを食い、不要になったら開放してくれるからです。
+
+しかし、1人の上司にしか報告できない点は、Observerが2つ登録されると、2つのコールドストリームが必要であることを意味します。メモリ効率的には良くない面もあるのです。
+
+### ホットストリーム
+
+反対の型がホットストリームです。こちらもObservableですが、Subscriberがいなくても値を発行し、データを送り出します。Publisherと呼ばれることが多くあります。
+
+こちらは上司が来る前から働き出す頑張り屋さんです。上司がいる間、状況の変化を逐次報告するのはコールドと同じですが、複数の上司がいても同じ報告を1人で請け負います。そして、上司が止めてくれるまで、いなくても働き続けるのです。
+
+ちゃんと止めてあげないと必要ないときも働き続けてしまうのですが、Observerがいくつ登録されても、使うリソースが変わらないのは利点です。
+
+これを応用すると、1つのコールドストリームを受信し、複数のSubscriberに送信させるという中継地点の役割も担えます。
+
+### Kotlinのストリーム事情
+
+元々Kotlinには、Channelというホットストリームが存在していました。しかし、suspendの非同期処理をシーケンシャルに繋げたい場合、コールドストリームのほうが望ましく、それは遅れて登場したFlowを待つ必要がありました。
+
+実際にFlowが登場すると、非同期処理を直感的に実装でき、安全で習得しやすく使いやすいと、次々と移行が進んでいます。
+
+### Flowの基本的な使い方
+
+まず、クリーンアーキテクチャーの図1.3でいうInteractorの部分は、無加工のデータを非同期に送ります。
+
+```Kotlin:CounterUseCase.kt
+suspend fun countStream(): Flow<Int> = flow {
+    repeat(100) { count ->
+        delay(100)
+        emit(count) // 0 1 2 3 4 ... 99
+    }
+}
+```
+
+ViewModelがデータを受け取り、表示向けに加工します。
+
+```Kotlin:CounterViewModel.kt
+val count = MutableLiveData<String>()
+
+fun counter() {
+    viewModelScope.launch(Dispatchers.Main) {
+        useCase.countStream()
+            .drop(1)
+            .filter { it % 2 == 0 }
+            .map { (it * it).toString() }
+            .take(5)
+            .collect { count.value = it } // 4 16 36 64 100
+    }
+}
+```
+
+それをViewが表示します。
+
+```Kotlin:activity_main.xml
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@{viewModel.count}" />
+
+```
+
+以下が、その全体図です。（画像にする予定）
+
+```
+View    |  ViewModel    | UseCase〜深層
+-----------------------------------------------
+        |               |
+イベント  →  Coroutine起動 → 時間のかかる処理（非同期）
+　　　 　|　　　　　　　　  |       ↓↓↓
+描画  ←←←  出力データ加工 ←←← 出力データ送信（複数回）
+        |               |
+```
+
+Flowにはオペレーターがたくさんあり、この図で言う左向き時のデータ加工に優れています。
+
 続きは以下
-https://qiita.com/tonionagauzzi/items/12aa1a4400256cece72c
+https://qiita.com/tonionagauzzi/items/12aa1a4400256cece72c#viewmodelscope%E3%81%AE%E8%A3%9C%E8%B6%B3%E8%AA%AC%E6%98%8E
 
 ## Kotlin Multiplatform MobileでUI以外を実装する
 
