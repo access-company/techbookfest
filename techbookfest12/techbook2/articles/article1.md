@@ -141,7 +141,7 @@ Subscribeされたら初めて動きだす、Observableなストリームです�
 
 社員だとどうかなと思うコールドな働き方ですが、プログラムとして、必要ないときに働かないのは実は強力な利点なんです。必要なときだけリソースを食い、不要になったら開放してくれるからです。
 
-しかし、1人の上司にしか報告できない点は、Observerが2つ登録されると、2つのコールドストリームが必要であることを意味します。メモリ効率的には良くない面もあるのです。
+しかし、1人の上司にしか報告できない点は、Observerが2つ登録されると、2つのコールドストリームが必要なことを意味します。これはメモリ効率を考えればいまいちなところです。
 
 ### ホットストリーム
 
@@ -161,60 +161,288 @@ Subscribeされたら初めて動きだす、Observableなストリームです�
 
 ### Flowの基本的な使い方
 
-まず、クリーンアーキテクチャーの図1.3でいうInteractorの部分は、無加工のデータを非同期に送ります。
+Androidアプリで、100ms毎に0から100までカウントする処理を、Flowを使って双方向データバインディングで実装してみましょう。
+
+**CounterUseCase.kt**
 
 ```Kotlin:CounterUseCase.kt
-suspend fun countStream(): Flow<Int> = flow {
-    repeat(100) { count ->
-        delay(100)
-        emit(count) // 0 1 2 3 4 ... 99
+class CounterUseCase {
+    suspend fun countStream(): Flow<Int> = flow {
+        repeat(100) { count ->
+            delay(100)
+            emit(count) // 0 1 2 3 4 ... 99
+        }
     }
 }
 ```
 
-ViewModelがデータを受け取り、表示向けに加工します。
+クリーンアーキテクチャーの図1.3でいうInteractorの部分が、無加工のデータを非同期に送ります。
+
+**CounterViewModel.kt**
 
 ```Kotlin:CounterViewModel.kt
-val count = MutableLiveData<String>()
+class CounterViewModel: ViewModel() {
+    val showing = MutableLiveData<String>()
 
-fun counter() {
-    viewModelScope.launch(Dispatchers.Main) {
-        useCase.countStream()
-            .drop(1)
-            .filter { it % 2 == 0 }
-            .map { (it * it).toString() }
-            .take(5)
-            .collect { count.value = it } // 4 16 36 64 100
+    fun showCountEvenNumbersSquared() {
+        viewModelScope.launch(Dispatchers.Main) {
+            useCase.countStream()
+                .drop(1)
+                .filter { it % 2 == 0 }
+                .map { (it * it).toString() }
+                .take(5)
+                .collect { count.value = it } // 4 16 36 64 100
+        }
     }
 }
 ```
 
-それをViewが表示します。
+ViewModelでは、それを表示向けに加工します。
+
+Presenterの代わりにFlowのObserverがおり、データが流れてきたらdropやtakeなどFlowの様々なオペレーターを使い、加工や除外を行います。
+
+**MainActivity.kt**
+
+```
+counterViewModel.showCountEvenNumbersSquared()
+```
+
+**activity_main.xml**
 
 ```Kotlin:activity_main.xml
 <TextView
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:text="@{viewModel.count}" />
-
+    android:text="@{viewModel.showing}" />
 ```
 
-以下が、その全体図です。（画像にする予定）
+Viewは、計算実行と表示を担当します。
+
+データの流れは、図1.1と同等になります。
+
+では、単方向データフローにするとどう変わるでしょうか。
+
+**CounterState.kt**
+
+```Kotlin:CounterState.kt
+sealed class CounterState {
+    data class Init(val count: Int = 0) : CounterState()
+    data class Success(val count: Int) : CounterState()
+    data class Error(val exception: Exception) : CounterState()
+}
+```
+
+図1.2に適合するため、Stateクラスを作成します。
+
+ただのカウンターにSuccessやErrorを持たせるのは若干大袈裟ですが、何かの処理を行い結果を返す場合の基本構成です。
+
+**CounterUseCase.kt**
+
+```Kotlin:CounterUseCase.kt
+class CounterUseCase {
+    private val mutableState = MutableStateFlow(CounterState.Init() as CounterState)
+    val state: StateFlow<CounterState> = mutableState
+    suspend fun countStream() {
+        repeat(100) { count ->
+            delay(100)
+            mutableState.emit(count) // 0 1 2 3 4 ... 99
+        }
+    }
+}
+```
+
+Interactorが、無加工のデータを非同期に送ります。
+
+先ほどと違うのは、FlowインスタンスをStateクラス型で外部に公開している点です。
+
+StateFlowは、Flowを継承した状態管理用のホットストリームなFlowで、LiveDataに似たものです。詳しくは後述しますが、Stateを導入する上で最も容易な手段なので採用しています。
+
+データ操作はMutableStateFlowでないと行えませんが、データ更新をどこからでも行えるのはリスクのある設計なので、MutableStateFlow型は非公開にします。そのため、CounterUseCaseのみがStateの更新が可能です。
+
+**CounterViewModel.kt**
+
+```Kotlin:CounterViewModel.kt
+class CounterViewModel: ViewModel(
+    useCase: CounterUseCase
+) {
+    private val mutableShowing = MutableStateFlow(String)
+    val showing: StateFlow<String> = mutableShowing
+
+    init {
+        useCase.state
+            .drop(1)
+            .filter { it is Success && it.list % 2 == 0 }
+            .map { it is Success && (it * it).toString() }
+            .take(5)
+            .onEach { new ->
+                (new as? Success)?.count?.let {
+                    mutableShowing.value = it // 4 16 36 64 100
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun counter() {
+        viewModelScope.launch(Dispatchers.Main) {
+            useCase.countStream()
+        }
+    }
+}
+```
+
+ViewModelが、それを表示向けに加工します。
+
+先ほどと違うのは、ここでもStateFlowを外部に公開している点です。今まで説明した依存関係に従い、公開先はViewです。
+
+**MainActivity.kt**
 
 ```
-View    |  ViewModel    | UseCase〜深層
------------------------------------------------
-        |               |
-イベント  →  Coroutine起動 → 時間のかかる処理（非同期）
-　　　 　|　　　　　　　　  |       ↓↓↓
-描画  ←←←  出力データ加工 ←←← 出力データ送信（複数回）
-        |               |
+counterViewModel.showCountEvenNumbersSquared()
 ```
 
-Flowにはオペレーターがたくさんあり、この図で言う左向き時のデータ加工に優れています。
+**activity_main.xml**
 
-続きは以下
-https://qiita.com/tonionagauzzi/items/12aa1a4400256cece72c#viewmodelscope%E3%81%AE%E8%A3%9C%E8%B6%B3%E8%AA%AC%E6%98%8E
+```Kotlin:activity_main.xml
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@{viewModel.showing}" />
+```
+
+Viewは、計算実行と表示を担当します。
+
+データの流れは、図1.7と同等になります。
+
+サンプルコードに出てきたViewModelScopeとDispatcherは、Flowを使う上では理解を欠かせないキーワードですが、本書では省略します。
+
+### SharedFlowとStateFlow
+
+さて、先ほど出てきたStateFlowと、異なる性質を持つSharedFlowについて説明します。
+
+Flowでの値の更新は、上記UseCaseの`flow { ... }`ラムダ式中でしかできません。つまりViewModel側では値を更新できず、また`.value`のように値の参照もできません。
+
+subscribeしてる数だけ`flow { ... }`ラムダ式が呼ばれてしまうのも特徴です。
+
+それでは状態保持とか処理リソースの節約には向いてないということで、ホットストリームなFlowとして登場したのが、ここで紹介するSharedFlowとStateFlowです。
+
+**SharedFlowとは**
+
+複数箇所でのsubscribeでデータや状態を共有できるFlowで、処理リソースの節約に向いています。
+
+ただのFlowと違う点は以下です。
+
+```Kotlin
+sharedFlow.onEach {
+    println("1")
+}.launchIn(scope)
+
+sharedFlow.onEach {
+    println("2")
+}.launchIn(scope)
+```
+
+* このように複数subscribeしてても`flow { ... }`ラムダ式側は1回しか呼ばれない
+* 処理開始/subscribe終了のタイミングを選択できるが、これを適切に指定しないとsubscribeされ続ける
+  * `LiveData`に変換し、`observe`引数に`LifecycleOwner`を設定すれば、表示中だけのsubscribeも可能
+* 色々高機能
+  * replay: subscribeした瞬間、過去のn回の値を受信する
+  * buffer: 複数subscribeかつ処理に時間がかかるとき、1回目に行われた処理をバッファリングして、2回目以降を早くしてくれる
+
+1つだけのFlowインスタンスを全ての場所で参照し、監視は必要な間だけ動作させるとか、永続的に監視しつつ、`replay`で最後に発行された10個を常に監視するといったトリックが可能です。
+  
+**StateFlowとは**
+
+状態保持に特化したSharedFlowです。LiveDataに似ています、というか実質の後継機能です。
+
+* 初期値が必須
+* 現在の状態を`.value`で受け取れる
+* MutableStateFlowを使えば、`.value`への代入も可能
+  * その際Coroutines Scopeは不要
+* `launchIn`で直近の値を1つ受信する
+* 同じ値の代入は受信しない
+* waitとかを挟まず連続して値が変更されたとき、最後の値しか受信しない
+  * つまり「状態」が「保持」されないと「状態変化」とみなされない
+
+`sharedFlow`では、Viewを開いたタイミングでflowがサーバー通信などの処理中なら、直近の値をどう表示するのかで迷います。しかし、`stateFlow`では`.value`に直近の値がキャッシュされているので、迷わずに済みます。
+
+**初期化方法**
+
+`MutableSharedFlow`、`MutableStateFlow`を使って初期化するか、`shareIn`、`stateIn`を使ってFlowから変換します。`shareIn`は`sharedFlow`インスタンスを、`stateIn`は`stateFlow`インスタンスを返します。
+
+**注意点**
+
+関数の戻り値で`shareIn`や`stateIn`をしてはなりません。それをすると、関数の呼び出しごとに新しい`SharedFlow`または`StateFlow`が作成され、リソースの無駄遣いになります。
+
+また、ユーザーIDのような入力値を持つFlowは、異なる入力値で複数回開始した場合、`subscribe`が共有されていると新旧IDが混じって誤動作するリスクがあります。`shareIn`や`stateIn`で安易に共有してはならないパターンです。
+
+**処理開始タイミングの指定**
+
+`flow { ... }`ラムダ式の処理開始タイミングは、
+
+1. `shareIn`の`SharingStarted`オプションで、`shareIn`直後から永続的に開始する`Eagerly`
+2. subscribeが行われてから永続的に開始する`Lazily`
+3. subscribeが行われている間だけ有効にする`WhileSubscribed`
+
+を選択することができます。
+
+**結局どれがいいのか**
+
+…は、場合によって異なります。大事なのは、要件に応じて`SharedFlow`/`StateFlow`を適切に使い分けることです。
+
+どうしても迷うときは、
+
+1. subscribe場所の結果に狂いが生じないこと
+2. リソースの無駄遣いにならないこと
+
+を念頭に置いて判断しましょう。
+
+### FlowとLiveData、Rxとの比較
+
+Androidアプリでは、LiveDataやRxJavaからFlowへの置き換えが少しずつ進んでいます。が、Flowの何が良いのかわからないまま周りに釣られてやってる方も少なくないのではと思います。
+
+私も最初はその1人だったので、Flowを使うメリットを見ていきましょう。
+
+**従来手法の問題点**
+
+まず、Rx系を使う上で避けては通れない問題が、OSのライフサイクルへの適合やオーバーヘッド対策を盛り込むこと、あるいはそれらの考慮抜けによるバグです。
+
+LiveDataはAndroid Jetpackの一部なので、Androidのライフサイクルやメモリ/キャッシュとの親和性は抜群です。これは初心者のぶっつけ実装でもその類のバグが起きにくいことでLiveDataの優秀さを実感できると思います。もちろん`LifecycleOwner`の指定間違いのようなものは致命的です。
+
+一方、次々と起こる状態変化の`subscribe`や、Model→ViewModelのデータ変換部分に注目すると、そこは複雑化やバグの温床を抱えたままです。
+
+**Flow移行のメリット**
+
+**1. 構造化された並行性**
+
+FlowにあってLiveDataにない主な1つは、`map`の再計算やデータ変換を`flowOn`により簡単に他スレッドへ投げ、結果だけUI側で受け取れることです。
+
+コールドストリームなので、次々と状態変化が起きても無駄なくスレッドを使い破棄もしてくれます。
+
+**2. さまざまな演算子**
+
+`map`、`filter`、`onEach`、`reduce`など、LiveDataには無い多くの演算子で効率的なデータ変換を標準サポートしてくれます。
+
+**3. テスタビリティ**
+
+テストのしやすさもFlowに軍配が上がります。
+
+LiveData＋Coroutinesのテストはピタゴラスイッチのようなもので、他のテストの干渉を受けないよう上手く作らないとFailが起きたり、`observe`のチェーンになってしまいます。
+
+Flowでは`flowOn`する際の`dispatcher`に`TestCoroutineDispatcher`を使い、`runBlockingTest`で走らせることで必ず決まった順序でテストが可能なので、無用意な影響を排除できます。
+
+その順序をチェックする`collectIndexed`など便利なオペレーターも揃っています。
+
+一部だけモックをDIすることも容易です。
+
+**まとめ**
+
+LiveDataからFlowに移行すると、無駄のない非同期処理が書けて、いろんな演算子も使え、テストも捗ります。
+
+ただし、FlowはAndroidではなくKotlinの機能なので、Androidで使う場合`flowWithLifecycle`などの導入を忘れないようにしましょう。
+
+結局、LiveDataやRxより便利なのかは、作ろうとしてるモノが何か次第だと思います。上記のメリットを生かせると判断すれば完全Flowで、確信がなければ最初はLiveData+Flowという判断で良いと思います。
+
+AndroidにはFlowには`asLiveData`という変換オペレーターもあります。
 
 ## Kotlin Multiplatform MobileでUI以外を実装する
 
