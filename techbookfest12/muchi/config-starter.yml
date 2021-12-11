@@ -83,7 +83,7 @@ starter:
 
   ## 節 (Section) ごとに改ページするか
   ## （ただし各章の最初の節は改ページしない）
-  section_newpage: false
+  section_newpage: true
 
   ## ページ先頭なら節や項のタイトルの前にスペースを入れない
   ## （obsolete: 現在は常にtrue扱い）

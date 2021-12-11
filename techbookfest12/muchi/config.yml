@@ -75,6 +75,7 @@ additional:
 # a-dsr, dsr: デザイナ
 # a-edt, edt: 編集者
 # a-ill, ill: イラストレータ
+ill: （好きな表記を教えてください to Umemotoさん）
 # a-lyr, lyr: 歌詞作成者
 # a-mdc, mdc: メタデータセットの一次的責任者
 # a-mus, mus: 音楽家
@@ -83,7 +84,6 @@ additional:
 # a-pht, pht: 撮影責任者
 # a-pbl, pbl: 出版社（発行所）
 # a-prt, prt: 印刷所
-prt: ねこのしっぽ
 # a-red, red: 項目の枠組起草者
 # a-rev, rev: 評論者
 # a-spn, spn: 援助者
