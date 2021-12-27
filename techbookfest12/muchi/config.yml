@@ -63,6 +63,7 @@ additional:
 # a-ann, ann: 注釈記述者
 # a-arr, arr: アレンジした者
 # a-art, art: グラフィックデザインおよび芸術家
+a-art: numatami
 # a-asn, asn: 関連・かつての所有者・関係者
 # a-aqt, aqt: 大きく引用された人物
 # a-aft, aft: 後書き・奥付の責任者
@@ -75,7 +76,7 @@ additional:
 # a-dsr, dsr: デザイナ
 # a-edt, edt: 編集者
 # a-ill, ill: イラストレータ
-ill: （好きな表記を教えてください to Umemotoさん）
+a-ill: toki
 # a-lyr, lyr: 歌詞作成者
 # a-mdc, mdc: メタデータセットの一次的責任者
 # a-mus, mus: 音楽家
@@ -327,7 +328,7 @@ texdocumentclass: ["jsbook",
     #"dvipdfmx,uplatex,papersize,twoside,openright" # 右起こし
     #"dvipdfmx,uplatex,papersize,twoside,openany"   # 両起こし
     #"dvipdfmx,uplatex,papersize,oneside,openany"   # 両起こし（タブレット向け）
-    "dvipdfmx,uplatex,papersize,twoside,openright"
+    "dvipdfmx,uplatex,papersize,twoside,openany"
 ]
 #
 # LaTeX用のコマンドを指定する
