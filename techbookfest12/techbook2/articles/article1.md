@@ -7,11 +7,11 @@
 
 しかし、モジュールやクラスの多さに伴ってデータの流れがわかりにくいのは、クリーンアーキテクチャー採用前と比べてあまり変わっていないようです。
 
-本書の前半では、クリーンアーキテクチャーの思想を守りつつ、データの流れをわかりやすくするためにKotlin Coroutines Flowを用いてUnidirectional Data Flow（以下、単方向データフロー）のロジックを実装します。
+本書の前半では、クリーンアーキテクチャーの思想を守りつつデータの流れをわかりやすくするため、Kotlin Coroutines Flow（以下、Flow）を用いてUnidirectional Data Flow（以下、単方向データフロー）のロジックを実装します。
 
-そして後半では、そのロジックをKotlin Multiplatform Mobileのフレームワークとしてアプリに組み込みます。Kotlinを標準サポートするAndroidアプリではなく、あえてSwiftUIベースのiOSアプリを選び、X-Platformへの適合を確認します。また、KotlinのFlowがSwiftにはどんな形で流れるのか、単方向データフローやConcurrencyは保たれるのか、お楽しみの終盤展開となっています。
+そして後半では、ロジックをKotlin Multiplatform Mobile（以下、KMM）のフレームワークとしてアプリに組み込みます。KMMを使うということは、AndroidだけでなくiOSでもFlowが使われるということですが、本書のサンプルではiOSを用い、KotlinのFlowがSwiftにはどんな形で流れるのか、お楽しみの終盤展開となっています。
 
-なお、クリーンアーキテクチャーの概要は、本書では触れていません。[ACCESSテックブック](https://access-company.github.io/techbookfest/techbookfest7/ACCESS_techbook_ebook_20190922.pdf)第1章、もしくは数ある書籍や検索をご参照ください。
+なお、クリーンアーキテクチャーの概要は、本書では触れていません。前作の[ACCESSテックブック](https://access-company.github.io/techbookfest/techbookfest7/ACCESS_techbook_ebook_20190922.pdf)第1章、もしくは数ある書籍や検索をご参照ください。
 
 ## 単方向データフロー
 
@@ -61,7 +61,7 @@ Androidアプリの場合、今までは[@BindingAdapter](https://developer.andr
 
 また、接続がアノテーション任せな上に双方向なので、デバッグやバグ調査がしづらい問題もありました。
 
-2021年7月、待望のJetpack Composeが登場し、[単方向データフロー](https://developer.android.com/jetpack/compose/architecture?hl=ja#udf-compose)が公式推奨されました。これを導入すると、UIからStateを直接変えれなくなるため、先述の複雑性からある程度解放されます。
+2021年7月、待望のJetpack Composeが登場し、[単方向データフロー](https://developer.android.com/jetpack/compose/architecture?hl=ja#udf-compose)が公式推奨されました。これを導入すると、UIからStateを直接変えられなくなるため、先述の複雑性からある程度解放されます。
 
 また、デメリットの1つであるライフサイクル問題も、remember宣言子によってStateの生存期間をViewライフサイクルに合わせられるので回避できます。
 
@@ -71,7 +71,7 @@ iOSアプリは、MVCやMVC+VMのようなアーキテクチャがよく使わ�
 
 しかし、Rx系をふんだんに使わないとあっという間にControllerが肥大化したり、外部のフレームワークに頼らざるをえないのが積年の問題でした。一部をRouterに切り出したり、VIPERを導入したりなどの模索が続きました。
 
-2019年、Swift UI/Combineが登場し、こちらも単方向データフローが公式サポートのスタート地点に立ちました。非公式ですが[TCA](https://qiita.com/tonionagauzzi/items/a97a7303b546e515fc9b)も登場し、着々と置き換えが進んでいる印象です。
+2019年、Swift UI/Combineが登場し、こちらも単方向データフローが公式サポートのスタート地点に立ちました。非公式ですが[TCA](https://qiita.com/tonionagauzzi/items/a97a7303b546e515fc9b)も登場し、着々と置き換えが進んでいます。
 
 ## クリーンアーキテクチャーと単方向データフロー
 
@@ -127,11 +127,9 @@ ViewModelという呼び方が適切かどうかは諸説ありつつ、コン�
 
 ## Kotlin Coroutines Flow
 
-ここまではOSを限定せず記述しましたが、ここからは実際にKotlin Coroutine Flowを用いていきます。
+ここまではOSを限定せず記述しましたが、ここからは実際にAndroidアプリでFlowを使う例を紹介します。
 
-まず、説明です。Kotlin Coroutine Flowとは、Kotlin Coroutinesの新しい非同期処理用ライブラリです。
-
-RxやPromiseに似た記述ができ、コールドストリームであることが特徴です。
+Flowとは、Kotlin Coroutinesの新しい非同期処理用ライブラリです。RxやPromiseに似た記述ができ、コールドストリームであることが特徴です。
 
 ### コールドストリーム
 
@@ -163,7 +161,7 @@ Subscribeされたら初めて動きだす、Observableなストリームです�
 
 Androidアプリで、100ms毎に0から100までカウントする処理を、Flowを使って双方向データバインディングで実装してみましょう。
 
-**CounterUseCase.kt**
+#### CounterUseCase.kt
 
 ```Kotlin:CounterUseCase.kt
 class CounterUseCase {
@@ -178,7 +176,7 @@ class CounterUseCase {
 
 クリーンアーキテクチャーの図1.3でいうInteractorの部分が、無加工のデータを非同期に送ります。
 
-**CounterViewModel.kt**
+#### CounterViewModel.kt
 
 ```Kotlin:CounterViewModel.kt
 class CounterViewModel: ViewModel() {
@@ -201,13 +199,13 @@ ViewModelでは、それを表示向けに加工します。
 
 Presenterの代わりにFlowのObserverがおり、データが流れてきたらdropやtakeなどFlowの様々なオペレーターを使い、加工や除外を行います。
 
-**MainActivity.kt**
+#### MainActivity.kt
 
 ```
 counterViewModel.showCountEvenNumbersSquared()
 ```
 
-**activity_main.xml**
+#### activity_main.xml
 
 ```Kotlin:activity_main.xml
 <TextView
@@ -222,7 +220,7 @@ Viewは、計算実行と表示を担当します。
 
 では、単方向データフローにするとどう変わるでしょうか。
 
-**CounterState.kt**
+#### CounterState.kt
 
 ```Kotlin:CounterState.kt
 sealed class CounterState {
@@ -236,7 +234,7 @@ sealed class CounterState {
 
 ただのカウンターにSuccessやErrorを持たせるのは若干大袈裟ですが、何かの処理を行い結果を返す場合の基本構成です。
 
-**CounterUseCase.kt**
+#### CounterUseCase.kt
 
 ```Kotlin:CounterUseCase.kt
 class CounterUseCase {
@@ -259,7 +257,7 @@ StateFlowは、Flowを継承した状態管理用のホットストリームなF
 
 データ操作はMutableStateFlowでないと行えませんが、データ更新をどこからでも行えるのはリスクのある設計なので、MutableStateFlow型は非公開にします。そのため、CounterUseCaseのみがStateの更新が可能です。
 
-**CounterViewModel.kt**
+#### CounterViewModel.kt
 
 ```Kotlin:CounterViewModel.kt
 class CounterViewModel: ViewModel(
@@ -294,13 +292,13 @@ ViewModelが、それを表示向けに加工します。
 
 先ほどと違うのは、ここでもStateFlowを外部に公開している点です。今まで説明した依存関係に従い、公開先はViewです。
 
-**MainActivity.kt**
+#### MainActivity.kt
 
 ```
 counterViewModel.showCountEvenNumbersSquared()
 ```
 
-**activity_main.xml**
+#### activity_main.xml
 
 ```Kotlin:activity_main.xml
 <TextView
@@ -325,7 +323,7 @@ subscribeしてる数だけ`flow { ... }`ラムダ式が呼ばれてしまうの
 
 それでは状態保持とか処理リソースの節約には向いてないということで、ホットストリームなFlowとして登場したのが、ここで紹介するSharedFlowとStateFlowです。
 
-**SharedFlowとは**
+#### SharedFlowとは
 
 複数箇所でのsubscribeでデータや状態を共有できるFlowで、処理リソースの節約に向いています。
 
@@ -350,7 +348,7 @@ sharedFlow.onEach {
 
 1つだけのFlowインスタンスを全ての場所で参照し、監視は必要な間だけ動作させるとか、永続的に監視しつつ、`replay`で最後に発行された10個を常に監視するといったトリックが可能です。
   
-**StateFlowとは**
+#### StateFlowとは
 
 状態保持に特化したSharedFlowです。LiveDataに似ています、というか実質の後継機能です。
 
@@ -365,17 +363,17 @@ sharedFlow.onEach {
 
 `sharedFlow`では、Viewを開いたタイミングでflowがサーバー通信などの処理中なら、直近の値をどう表示するのかで迷います。しかし、`stateFlow`では`.value`に直近の値がキャッシュされているので、迷わずに済みます。
 
-**初期化方法**
+#### 初期化方法
 
 `MutableSharedFlow`、`MutableStateFlow`を使って初期化するか、`shareIn`、`stateIn`を使ってFlowから変換します。`shareIn`は`sharedFlow`インスタンスを、`stateIn`は`stateFlow`インスタンスを返します。
 
-**注意点**
+#### 注意点
 
 関数の戻り値で`shareIn`や`stateIn`をしてはなりません。それをすると、関数の呼び出しごとに新しい`SharedFlow`または`StateFlow`が作成され、リソースの無駄遣いになります。
 
 また、ユーザーIDのような入力値を持つFlowは、異なる入力値で複数回開始した場合、`subscribe`が共有されていると新旧IDが混じって誤動作するリスクがあります。`shareIn`や`stateIn`で安易に共有してはならないパターンです。
 
-**処理開始タイミングの指定**
+#### 処理開始タイミングの指定
 
 `flow { ... }`ラムダ式の処理開始タイミングは、
 
@@ -385,7 +383,7 @@ sharedFlow.onEach {
 
 を選択することができます。
 
-**結局どれがいいのか**
+#### 結局どれがいいのか
 
 …は、場合によって異なります。大事なのは、要件に応じて`SharedFlow`/`StateFlow`を適切に使い分けることです。
 
@@ -402,7 +400,7 @@ Androidアプリでは、LiveDataやRxJavaからFlowへの置き換えが少し�
 
 私も最初はその1人だったので、Flowを使うメリットを見ていきましょう。
 
-**従来手法の問題点**
+#### 従来手法の問題点
 
 まず、Rx系を使う上で避けては通れない問題が、OSのライフサイクルへの適合やオーバーヘッド対策を盛り込むこと、あるいはそれらの考慮抜けによるバグです。
 
@@ -410,19 +408,17 @@ LiveDataはAndroid Jetpackの一部なので、Androidのライフサイクル�
 
 一方、次々と起こる状態変化の`subscribe`や、Model→ViewModelのデータ変換部分に注目すると、そこは複雑化やバグの温床を抱えたままです。
 
-**Flow移行のメリット**
-
-**1. 構造化された並行性**
+#### Flow移行のメリット1. 構造化された並行性
 
 FlowにあってLiveDataにない主な1つは、`map`の再計算やデータ変換を`flowOn`により簡単に他スレッドへ投げ、結果だけUI側で受け取れることです。
 
 コールドストリームなので、次々と状態変化が起きても無駄なくスレッドを使い破棄もしてくれます。
 
-**2. さまざまな演算子**
+#### Flow移行のメリット2. さまざまな演算子
 
 `map`、`filter`、`onEach`、`reduce`など、LiveDataには無い多くの演算子で効率的なデータ変換を標準サポートしてくれます。
 
-**3. テスタビリティ**
+#### Flow移行のメリット3. テスタビリティ
 
 テストのしやすさもFlowに軍配が上がります。
 
@@ -434,7 +430,7 @@ Flowでは`flowOn`する際の`dispatcher`に`TestCoroutineDispatcher`を使い�
 
 一部だけモックをDIすることも容易です。
 
-**まとめ**
+#### まとめ
 
 LiveDataからFlowに移行すると、無駄のない非同期処理が書けて、いろんな演算子も使え、テストも捗ります。
 
@@ -442,12 +438,379 @@ LiveDataからFlowに移行すると、無駄のない非同期処理が書け�
 
 結局、LiveDataやRxより便利なのかは、作ろうとしてるモノが何か次第だと思います。上記のメリットを生かせると判断すれば完全Flowで、確信がなければ最初はLiveData+Flowという判断で良いと思います。
 
-AndroidにはFlowには`asLiveData`という変換オペレーターもあります。
+AndroidのFlowには`asLiveData`という変換オペレーターもあります。
 
-## Kotlin Multiplatform MobileでUI以外を実装する
+## Kotlin Coroutines FlowをSwiftでobserveする
 
-執筆中
+ここまでFlowについて説明しましたが、例えばUI以外をKotlin Multiplatform Mobile（以下、KMM）で実装し、UIはSwiftで実装するiOSアプリの場合、**KotlinのFlowはSwiftでも受け取れるのか？**という疑問が起きます。
 
-## SwiftUIにKMMを取り込む
+結論としては受け取れますし、Flowの強みである各種オペレーターも、そのままとはいきませんがSwiftの事情に合わせる形で容易に利用できます。
 
-執筆中
+では、それを確かめましょう。
+
+### 環境構築
+* 必須要件：[Android Studio 4.2以上 / Xcode 11.3以上](https://kotlinlang.org/docs/kmm-setup.html) / [macOS Mojave 10.14.4](https://developer.apple.com/support/xcode/)
+* 私の環境：Android Studio Arctic Fox 2020.3.1 / Xcode 13.1 (13A1030d) / macOS Big Sur 11.5.2
+
+せっかくなので、KMMアプリを1から作る手順を載せます。
+
+1. Android Studioで、Android Studio→Preferences→Pluginsで、Kotlin Multiplatform Mobileをインストール
+2. Android Studioで、File→New→New Project、KMM Applicationを選択
+3. パッケージ名など入れる
+4. Add sample tests for Shared moduleにチェック入れ（本記事ではテストコード書かないですが今後のため）、iOS framework distributionはRegular frameworkとする
+5. フォルダ階層をAndroidからProjectに変える
+6. iOSのデバッグ設定をEdit Configurationsから行う
+7. Execution Targetを好みのSimulatorに指定
+8. Simulatorが出てこない場合はXcode→Window→Devices and Simulators→Simulatorsタブの＋ボタンで追加
+
+これで準備完了。
+
+ちなみにGradle SettingでJDK 1.8だとビルド時に`Android Gradle plugin requires Java 11 to run. You are currently using Java 1.8.`というエラーになるので、Android Studio→Preferences→Build, Execution, Deployment→Build Tools→GradleでGradle JDKを11以上に設定します。
+![](./images/1_17.jpg)
+
+最後に、`shared/build.gradle.kts`にcommonで使う依存関係を追加します。
+
+```Kotlin:shared/build.gradle.kts
+val commonMain by getting {
+    dependencies {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.0")
+        implementation(
+            "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt"){
+            version {
+                strictly("1.5.2-native-mt")
+            }
+        }
+    }
+}
+```
+
+`native-mt`を付与しないと、iOSからのCoroutines呼び出しで落ちます。後々Ktorなどの依存関係を追加する場合に備え、`strictly`も設定します。
+
+### 実装
+
+この章で作るのは「赤ちゃんに見せるアルバムアプリ」です。
+
+1歳の娘が、自分やいとこの写真をスマホで見るのが大好きなんです。しかし、OS標準のフォトアプリで写真を見せてると、手を伸ばして触れていろんな操作をしてしまいます。
+
+たとえば削除してゴミ箱を空にしたりとか、共有を開きメールを開いて画像を誰かに送信なんてことがあると困ります。実際タッチパネルが敏感すぎて予期せぬことが意外と起きます。
+
+なので、アルバムアプリの仕様は次のようにします。
+
+1. 15秒ごとに異なる画像をランダムに表示する
+1. ユーザー入力は一切受け付けない
+1. Homeボタンを押さないとアプリを抜けられない
+
+設計はこうします。Repositoryより先はありません。
+![](./images/1_18.jpg)
+
+サーバーやデータ保存まで作り込むと本書の記事が長くなり伝えたい本質がどこかわからなくなるので、極シンプルなプログラム仕様にします。
+
+1. InteractorとRepositoryは、15秒ごとに[0-4]の数字をランダムでStateに反映
+3. ViewModelは、StateをSubscribeし、その数字に応じた画像名をViewにPublish
+4. Viewは、`@Published`変数をSubscribeし、その画像をアセットから見つけて表示
+
+その通りコードを書いていきます。Kotlinのソースコードは全てsharedのcommonMain階層下です。
+
+#### SwiftStateFlow.kt
+
+まずは、本記事のメインテーマとなるStateFlowをSwiftで使うための`SwiftStateFlow`を実装します。
+
+```Kotlin:SwiftStateFlow.kt
+package com.vitantonio.nagauzzi.babyalbum
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+
+class SwiftStateFlow<T>(private val kotlinStateFlow: StateFlow<T>) : Flow<T>
+        by kotlinStateFlow {
+    val value = kotlinStateFlow.value
+    var job: Job? = null
+
+    fun observe(continuation: ((T) -> Unit)) {
+        kotlinStateFlow.onEach {
+            continuation(it)
+        }.launchIn(
+            CoroutineScope(Dispatchers.Main + Job().also { job = it })
+        )
+    }
+
+    fun close() {
+        job?.cancel()
+        job = null
+    }
+}
+```
+
+呼び元は`continuation`クロージャの引数でデータを受け取ります。
+
+FlowでなくStateFlowを選択したのは、前回と同じ値を連続発行しないためのチェックをInteractorに設ける予定だからです。
+
+ここで、Flowの豊富なオペレーターを駆使すればいいのでは？と思われた方は鋭いですね！ぜひ後述の**CombineとFlowを連動してより使いやすくする**というところを見てください。
+
+呼び元が破棄されるときに`close()`を呼ぶと中断もできます。実際、後述のViewModelの`deinit`で呼んでます。
+
+#### PublishNumber.kt (Interactor)
+
+次に、KMM側のInteractor/Repository/Stateを実装します。
+
+```Kotlin:PublishNumber.kt
+package com.vitantonio.nagauzzi.babyalbum.domain.interactor
+
+import com.vitantonio.nagauzzi.babyalbum.SwiftStateFlow
+import com.vitantonio.nagauzzi.babyalbum.domain.repository.NumberRepository
+import com.vitantonio.nagauzzi.babyalbum.domain.state.NumberState
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+
+class PublishNumber(
+    private val repository: NumberRepository
+) {
+    private val mutableState = MutableStateFlow(NumberState.Init(0) as NumberState)
+    private val swiftMutableState = SwiftStateFlow(mutableState)
+
+    val state: StateFlow<NumberState>
+        get() = mutableState
+    val swiftState: SwiftStateFlow<NumberState>
+        get() = swiftMutableState
+
+    fun execute(min: Int, max: Int, times: Int) =
+        CoroutineScope(Dispatchers.Default).launch {
+            repeat(times) {
+                delay(15000)
+                mutableState.value = NumberState.Updated(
+                    repository.getChangedRandom(min, max,
+                        before = state.value.number)
+                )
+            }
+        }
+}
+```
+
+#### NumberRepository.kt (Repository)
+
+```Kotlin:NumberRepository.kt
+package com.vitantonio.nagauzzi.babyalbum.domain.repository
+
+class NumberRepository {
+    fun getChangedRandom(min: Int, max: Int, before: Int): Int {
+        val random = (min..max).random()
+        return if (random == before) {
+             getChangedRandom(min, max, before)
+         } else {
+             random
+         }
+    }
+}
+```
+
+#### NumberState.kt (State)
+
+```Kotlin:NumberState.kt
+package com.vitantonio.nagauzzi.babyalbum.domain.state
+
+sealed class NumberState(open val number: Int) {
+    data class Init(override val number: Int) : NumberState(number)
+    data class Updated(override val number: Int) : NumberState(number)
+}
+```
+
+この程度ならInteractor/Repository/Stateに分けるメリットがあまり無いのですが、行く行くはサーバーから画像をダウンロードしてByteArrayか何かでInteractorに渡し、StateはInit/Success/Failureに分かれることを想定しているので、今のうちにと分けてしまいました。
+
+#### AlbumViewModel.swift (ViewModel)
+
+さて、ここからはSwift側です。
+
+KMMのプロジェクトを作るだけでSwiftUIがデフォルト生成されているので、まずViewModelを作ります。
+
+```Swift:AlbumViewModel.swift
+import shared
+
+class AlbumViewModel: ObservableObject {
+    private let photos = (1...5).map { "BabyImage\($0)" }
+    private let interactor: PublishNumber
+    
+    @Published var photoName: String
+
+    init(interactor: PublishNumber) {
+        self.interactor = interactor
+        self.photoName = self.photos[0]
+        interactor.swiftState.observe { newState in
+            if 0...4 ~= newState!.number {
+                self.photoName = self.photos[Int(newState!.number)]
+            } else {
+                fatalError("newNumber isn't supported number")
+            }
+        }
+    }
+    
+    deinit {
+        self.interactor.swiftState.close()
+    }
+}
+```
+
+先頭の`import shared`で、KMMで作った`SwiftStateFlow`やInteractorにアクセスできるわけです。始めれば難しくないですよね、KMM！
+
+そして、`observe`がFlowを監視・データ受信する部分です。画像名に変えて`photoName`に入れると、@Published が付いているのでViewの更新トリガーの役割を果たしてくれます。
+
+`photos`が配列で画像名を持っていますが、実際の画像は`BabyImage1`〜`BabyImage5`をassetに登録済みです。
+
+![](./images/1_19.jpg)
+
+#### ContentView.swift (ViewModel)
+
+最後に、ContentViewをデフォルトから変更します。これが設計図のViewにあたります。
+
+```Swift:ContentView.swift
+ import shared
+ 
+ struct ContentView: View {
+-    let greet = Greeting().greeting()
+-
++    @ObservedObject var viewModel: AlbumViewModel
++    let interactor: PublishNumber
++    
++    init() {
++        self.interactor = PublishNumber(repository: NumberRepository())
++        self.viewModel = AlbumViewModel(interactor: interactor)
++    }
++    
+     var body: some View {
+-        Text(greet)
++        ZStack {
++            Color.black
++                .ignoresSafeArea()
++            Image(viewModel.photoName)
++                .resizable()
++                .aspectRatio(contentMode: .fill)
++        }.task {
++            self.interactor.execute(min: 0, max: 4, times: 100)
++        }
+     }
+ }
+```
+
+### プレビューと実行
+
+ここで、SwiftUIのプレビューが動いていないことに気づきました。
+
+Android Studio側でRunするとビルドできるのですが、Xcode側ではまだxcframeworkをインポートしてないので、そのビルドエラーによってプレビューやデバッグ、エラー調査などができないのです。
+
+Xcodeでそれらができたら開発効率が上がるので、直しましょう。
+
+iosAppのTARGETS→Build Phases→Link Binary With Librariesで、`./BabyAlbum/shared/build/bin/iosX64/debugFramework/shared.framework`を追加します。
+![](./images/1_20.jpg)
+![](./images/1_21.jpg)
+
+ただし、とりあえずビルドを通したいだけなので、CPUアーキテクチャーによっては上記出力先のframeworkではダメなこともあります。
+
+いちいち設定を弄るのは面倒なので、実際に動かすためのビルドはAndroid Studioからがよいでしょう。
+
+これでひとまず仕様は満たせました。
+
+![](./images/1_22.jpg)
+
+プレビューもされてるし、実行すると15秒毎に違う画像に変わります。これはSwiftStateFlowが15秒毎のFlowのデータ送出をSwiftにうまく伝えているからですね。
+
+iPadに入れて赤ちゃんに見せてあげたいと思います😊
+
+## Combineを使って改善する
+
+さて、ここまでで満足かというと、「本当に作りたかったものはこれじゃない」感があります。
+
+SwiftStateFlowが`onEach`を逐次横流ししてるだけじゃん！みたいな。
+
+Flowの強みである様々なオペレーター（`map`、`filter`、`onEach`、`reduce`など）を使いたいのです。
+
+とはいえFlowと同じオペレーターをSwiftで1から実装するのは大変だし、shared.hに定義されてるKotlinx_coroutines_core系の型を使ってFlowの扉をこじ開けるのもちょっと根気が必要そうです。
+
+そもそも、無理してFlowに合わせるより、SwiftならSwiftらしい実装をしたいですよね。
+
+そこで、Swift標準の非同期フレームワークである**Combine**の出番です！
+
+AlbumViewModelを以下のように書き直します。
+
+#### AlbumViewModel.swift（ViewModel）
+
+```Swift:AlbumViewModel.swift
+import Combine
+import shared
+
+class AlbumViewModel: ObservableObject {
+    private let photos = (1...5).map { "BabyImage\($0)" }
+    private let interactor: PublishNumber
+    private var cancellable: Cancellable?
+    
+    @Published var photoName: String
+
+    init(interactor: PublishNumber) {
+        self.interactor = interactor
+        self.photoName = self.photos[0]
+        self.cancellable = NumberStatePublisher(stateFlow: interactor.swiftState)
+            .map { newValue in
+                self.photos[Int(newValue.number)]
+            }
+            .assign(to: \.photoName, on: self)
+    }
+    
+    deinit {
+        self.cancellable?.cancel()
+    }
+}
+
+public struct NumberStatePublisher: Publisher {
+    public typealias Output = NumberState
+    public typealias Failure = Never
+    
+    private let stateFlow: SwiftStateFlow<Output>
+    
+    public init(stateFlow: SwiftStateFlow<Output>) {
+        self.stateFlow = stateFlow
+    }
+
+    public func receive<S: Subscriber>(subscriber: S)
+            where S.Input == Output, S.Failure == Failure {
+        let subscription = NumberStateSubscription(stateFlow: stateFlow, subscriber: subscriber)
+        subscriber.receive(subscription: subscription)
+    }
+}
+
+final class NumberStateSubscription<S: Subscriber>: Subscription
+        where S.Input == NumberState, S.Failure == Never {
+    private let stateFlow: SwiftStateFlow<S.Input>
+    private var subscriber: S?
+
+    public init(stateFlow: SwiftStateFlow<S.Input>, subscriber: S) {
+        self.stateFlow = stateFlow
+        self.subscriber = subscriber
+      
+        stateFlow.observe { newValue in
+            _ = subscriber.receive(newValue!)
+        }
+    }
+  
+    func cancel() {
+        subscriber = nil
+        stateFlow.close()
+    }
+
+    func request(_ demand: Subscribers.Demand) {}
+}
+```
+
+Combineの仕組みは省略しますが、必要なPublisherとSubscriptionを作りました。
+
+最も肝心なのは`func startSubscribe()`の部分です。受け取った数字を`map`で文字列加工して、直接`photoName`にバインドしています。この数行だけでロジックから流れてきたデータをView向きに加工して再描画まで行っていることを考えれば、とてもシンプルですよね。もちろん`map`以外のCombineオペレーターも使用可能です。
+
+これが標準フレームワークのオペレーターを使用できる大きな利点です。改良前の`onEach`を横流しするだけのViewModelもコード量は少ないのですが、複雑な実装になると`observe`部分が膨れ上がり、じわじわと痛めつけられるでしょう。
+
+また、Publisherを何かに`assign`するとCancellableオブジェクトが取れるので、その参照を取っておいてViewModelが解放される際に監視を止めることも可能です。改良前は直接Interactorを介してSwiftStateの`cancel`を呼ぶ必要があり、複数箇所で監視している場合の考慮ができていませんでした。
+
+## まとめ
+
+まとめる力などもう残ってない（笑）2022/1/11(火)に続きを書きます。
