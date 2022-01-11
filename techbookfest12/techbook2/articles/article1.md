@@ -101,7 +101,7 @@ domainから他へインターフェースを提供し、「この通りに実�
 
 Presenterを採用していると、最新の状態をどこに置くかが曖昧になります。
 
-また、ActionからViewに戻るまでのルートを自由に決められるので、私の参画してる案件でもApplicationやAppDelegateがPresenterを継承して、データの行き先がよくわからなくなってるロジックが多少ありました。
+また、ActionからViewに戻るまでのルートを自由に決められるので、私の参画している案件でもApplicationやAppDelegateがPresenterを継承して、データの行き先がよくわからなくなっているロジックが多少ありました。
 
 そのPresenterを無くし、UIからdomainに渡すものをAction、domainからUIにはStateの更新を通知するように変えてみます。
 
@@ -135,7 +135,7 @@ ViewModelからViewへは、依存こそありませんが、データは流れ�
 
 ![Viewから直接Actionを発火する場合のUIとdomain間の依存関係](./images/1_7.jpg)
 
-スッキリしましたね。
+スッキリしました。
 
 この場合のViewModelは、SubscribeしたデータをView向けに変換してViewに送り出す役割ですが、iOSの[TCA](https://qiita.com/tonionagauzzi/items/a97a7303b546e515fc9b)ではViewStore、[Unio](https://github.com/cats-oss/Unio)ではViewStreamと呼ばれています。
 
@@ -335,7 +335,7 @@ Viewは、計算実行と表示を担当します。
 
 Flowでの値の更新は、上記UseCaseの`flow { ... }`ラムダ式中でしかできません。つまりViewModel側では値を更新できず、また`.value`のように値の参照もできません。
 
-subscribeしてる数だけ`flow { ... }`ラムダ式が呼ばれてしまうのも特徴です。
+subscribeしている数だけ`flow { ... }`ラムダ式が呼ばれてしまうのも特徴です。
 
 それでは状態保持や処理リソースの節約には向いてないからと、ホットストリームなFlowとして登場したのが、ここで紹介するSharedFlowとStateFlowです。
 
@@ -412,11 +412,11 @@ Flow、SharedFlow、StateFlow、そしてSharedFlowかStateFlowの場合は開�
 
 Androidアプリでは、LiveDataやRxJavaからFlowへの置き換えが少しずつ進んでいます。ですが、Flowの何が良いのかわからないまま周りを気にして使っている方や、新しいからなんとなく使っている方も少なくないと思います。
 
-そのような方のために、従来手法と比較し、Flowを使うメリットを見つけましょう。
+そのような方のために、従来手法と比較し、Flowを使うメリットを説明します。
 
 #### 従来手法の問題点
 
-まず、Rx系を使う上で避けては通れない問題が、OSのライフサイクルへの適合やオーバーヘッド対策を盛り込むこと、あるいはそれらの考慮抜けによるバグです。
+Rx系を使う上で避けては通れない問題が、OSのライフサイクルへの適合やオーバーヘッド対策を盛り込むこと、あるいはそれらの考慮抜けによるバグです。
 
 LiveDataはAndroid Jetpackの一部なので、Androidのライフサイクルやメモリ/キャッシュとの親和性は抜群です。初心者のぶっつけ実装でもその類のバグが起きにくいことで、LiveDataの優秀さを実感できると思います。もちろん、`LifecycleOwner`の指定間違いなど致命的なものはあります。
 
@@ -452,13 +452,13 @@ LiveDataからFlowに移行すると、無駄のない非同期処理が書け�
 
 ただし、FlowはAndroidではなくKotlinの機能なので、Androidで使う場合`flowWithLifecycle`などの導入を忘れないようにしましょう。
 
-そして、FlowがLiveDataやRxより必ず便利とは限りません。作ろうとしてるものが何か次第です。上記のメリットを生かせると判断すれば完全Flowで、確信がなければUI部分はLiveData、ロジック部分はFlowを使うのが無難でしょう。
+そして、FlowがLiveDataやRxより必ず便利とは限りません。作ろうとしているものが何か次第です。上記のメリットを生かせると判断すれば完全Flowで、確信がなければUI部分はLiveData、ロジック部分はFlowを使うのが無難でしょう。
 
 AndroidのFlowには`asLiveData`という変換オペレーターもあります。
 
 ## Kotlin Coroutines FlowをSwiftでobserveする
 
-ここまでFlowについて説明しましたが、例えばUI以外をKotlin Multiplatform Mobile（以下、KMM）で実装し、UIはSwiftで実装するiOSアプリの場合、**KotlinのFlowはSwiftでも受け取れるのか？**という疑問が起きます。
+ここまでFlowについて説明しましたが、例えばUI以外をKotlin Multiplatform Mobile（以下、KMM）で実装し、UIはSwiftで実装するiOSアプリの場合、**KotlinのFlowはSwiftでも受け取れるのか**という疑問が起きます。
 
 結論としては受け取れますし、Flowの強みである各種オペレーターも、そのままとはいきませんがSwiftの事情に合わせる形で容易に利用できます。
 
@@ -508,26 +508,27 @@ val commonMain by getting {
 
 この章で作るのは、**赤ちゃんに見せるアルバムアプリ**です。
 
-1歳の娘が、自分やいとこの写真をスマホで見るのが大好きなのです。しかし、OS標準のフォトアプリで写真を見せてると、手を伸ばして触れていろんな操作をしてしまいます。
+1歳の娘が、自分やいとこの写真をスマホで見るのが大好きなのです。しかし、OS標準のフォトアプリで写真を見せていると、手を伸ばして触れ、いろんな操作をしてしまいます。
 
-たとえば削除してゴミ箱を空にしたり、共有を開きメールを開いて画像を誰かに送信なんてことがあると困ります。実際タッチパネルが敏感すぎて予期せぬことが意外と起きます。
+たとえば写真を削除した上でゴミ箱を空にしたり、共有メニューから画像を誰かに送信したり、なんてことがあると困るのです。
 
-なので、アルバムアプリの仕様は次のようにします。
+よって、アルバムアプリの仕様は次のようにします。
 
 1. 15秒ごとに異なる画像をランダムに表示する
-1. ユーザー入力は一切受け付けない
-1. Homeボタンを押さないとアプリを抜けられない
+1. ユーザー入力はHOMEボタン以外一切受け付けない
 
-設計はこうします。Repositoryより先はありません。
-![](./images/1_18.jpg)
+設計は図1.9の通りとします。Repositoryより先はありません。
+![赤ちゃん用アルバムアプリの設計](./images/1_18.jpg)
 
-サーバーやデータ保存まで作り込むと本書の記事が長くなり伝えたい本質がどこかわからなくなるので、極シンプルなプログラム仕様にします。
+サーバーやデータ保存まで作り込むと、本書の記事が長くなり伝えたい本質がどこかわからなくなるので、以下のようにとてもシンプルなプログラム仕様にします。
 
 1. InteractorとRepositoryは、15秒ごとに[0-4]の数字をランダムでStateに反映
-3. ViewModelは、StateをSubscribeし、その数字に応じた画像名をViewにPublish
-4. Viewは、`@Published`変数をSubscribeし、その画像をアセットから見つけて表示
+3. ViewModelは、StateをSubscribeし、数字に応じた画像名をView向けの`@Published`変数に反映
+4. Viewは、`@Published`変数にSwiftUIでバインドし、変数の画像名の画像をアセットから見つけて表示
 
-その通りコードを書いていきます。Kotlinのソースコードは全てsharedのcommonMain階層下です。
+その通りコードを書いていきます。
+
+Kotlinのソースコードは、全て`shared`の`commonMain`階層下です。
 
 #### SwiftStateFlow.kt
 
@@ -566,11 +567,9 @@ class SwiftStateFlow<T>(private val kotlinStateFlow: StateFlow<T>) : Flow<T>
 
 呼び元は`continuation`クロージャの引数でデータを受け取ります。
 
-FlowでなくStateFlowを選択したのは、前回と同じ値を連続発行しないためのチェックをInteractorに設ける予定だからです。
+FlowではなくStateFlowを選択したのは、前回と同じ値を連続発行しないように`state.value`をInteractor内で参照するからです。
 
-ここで、Flowの豊富なオペレーターを駆使すればいいのでは？と思われた方は鋭いですね！ぜひ後述の**CombineとFlowを連動してより使いやすくする**というところを見てください。
-
-呼び元が破棄されるときに`close()`を呼ぶと中断もできます。実際、後述のViewModelの`deinit`で呼んでます。
+呼び元が破棄されるときに`close()`を呼ぶと処理を中止できます。後述の`AlbumViewModel`の`deinit`で呼びます。
 
 #### PublishNumber.kt (Interactor)
 
@@ -637,13 +636,13 @@ sealed class NumberState(open val number: Int) {
 }
 ```
 
-この程度ならInteractor/Repository/Stateに分けるメリットがあまり無いのですが、行く行くはサーバーから画像をダウンロードしてByteArrayか何かでInteractorに渡し、StateはInit/Success/Failureに分かれることを想定しているので、今のうちにと分けてしまいました。
+この程度ならInteractor/Repository/Stateに分けるメリットがあまり無いのですが、行く行くはサーバーから画像をダウンロードしてByteArrayなどの型でInteractorに渡し、Stateは`Init`/`Success`/`Failure`に分かれることを想定しているので、今のうちに分けました。
 
 #### AlbumViewModel.swift (ViewModel)
 
 さて、ここからはSwift側です。
 
-KMMのプロジェクトを作るだけでSwiftUIがデフォルト生成されているので、まずViewModelを作ります。
+KMMのプロジェクトを作った時点で、SwiftUIのViewが自動生成されているので、ViewModelを作ります。
 
 ```Swift:AlbumViewModel.swift
 import shared
@@ -672,86 +671,79 @@ class AlbumViewModel: ObservableObject {
 }
 ```
 
-先頭の`import shared`で、KMMで作った`SwiftStateFlow`やInteractorにアクセスできるわけです。始めれば難しくないですよね、KMM！
+先頭の`import shared`で、KMMで作った`SwiftStateFlow`を使えたり`PublishNumber`にアクセスできます。
 
-そして、`observe`がFlowを監視・データ受信する部分です。画像名に変えて`photoName`に入れると、@Published が付いているのでViewの更新トリガーの役割を果たしてくれます。
+そして、`observe`がFlowを監視し、新しいStateを受信する部分です。受信した数値を画像名に変えて`photoName`に入れます。
 
-`photos`が配列で画像名を持っていますが、実際の画像は`BabyImage1`〜`BabyImage5`をassetに登録済みです。
+`photoName`には`@Published`が付いており、この変数がViewに対するPublisherの役割を果たしてくれます。
 
-![](./images/1_19.jpg)
+`photos`は配列で画像名を持っていますが、実際の画像は`BabyImage1`〜`BabyImage5`を`Assets.xcassets`に登録済みです。
+
+![Assets.xcassets](./images/1_19.jpg)
 
 #### ContentView.swift (ViewModel)
 
 最後に、ContentViewをデフォルトから変更します。これが設計図のViewにあたります。
 
 ```Swift:ContentView.swift
- import shared
+import shared
  
- struct ContentView: View {
--    let greet = Greeting().greeting()
--
-+    @ObservedObject var viewModel: AlbumViewModel
-+    let interactor: PublishNumber
-+    
-+    init() {
-+        self.interactor = PublishNumber(repository: NumberRepository())
-+        self.viewModel = AlbumViewModel(interactor: interactor)
-+    }
-+    
-     var body: some View {
--        Text(greet)
-+        ZStack {
-+            Color.black
-+                .ignoresSafeArea()
-+            Image(viewModel.photoName)
-+                .resizable()
-+                .aspectRatio(contentMode: .fill)
-+        }.task {
-+            self.interactor.execute(min: 0, max: 4, times: 100)
-+        }
-     }
- }
+struct ContentView: View {
+    @ObservedObject var viewModel: AlbumViewModel
+    let interactor: PublishNumber
+
+    init() {
+        self.interactor = PublishNumber(repository: NumberRepository())
+        self.viewModel = AlbumViewModel(interactor: interactor)
+    }
+    
+    var body: some View {
+        ZStack {
+            Color.black
+                .ignoresSafeArea()
+            Image(viewModel.photoName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        }.task {
+            self.interactor.execute(min: 0, max: 4, times: 100)
+        }
+    }
+}
 ```
 
 ### プレビューと実行
 
 ここで、SwiftUIのプレビューが動いていないことに気づきました。
 
-Android Studio側でRunするとビルドできるのですが、Xcode側ではまだxcframeworkをインポートしてないので、そのビルドエラーによってプレビューやデバッグ、エラー調査などができないのです。
+Android Studio側でRunするとビルドできますが、Xcode側では`shared.framework`をインポートしていないので、そのビルドエラーによってSwiftUIのプレビューやXcode側でのデバッグ、エラー調査などができないのです。
 
-Xcodeでそれらができたら開発効率が上がるので、直しましょう。
+XcodeでそれらができるとiOSエンジニアとしては開発効率が上がるので、直しましょう。
 
 iosAppのTARGETS→Build Phases→Link Binary With Librariesで、`./BabyAlbum/shared/build/bin/iosX64/debugFramework/shared.framework`を追加します。
-![](./images/1_20.jpg)
-![](./images/1_21.jpg)
+![Frameworkの追加](./images/1_20.jpg)
+![shared.frameworkの選択](./images/1_21.jpg)
 
-ただし、とりあえずビルドを通したいだけなので、CPUアーキテクチャーによっては上記出力先のframeworkではダメなこともあります。
+ただし、動かすiOS端末のCPUアーキテクチャーに応じたframeworkを取り込む必要があるので、正式なビルドはAndroid Studioから行うのがよいです。
 
-いちいち設定を弄るのは面倒なので、実際に動かすためのビルドはAndroid Studioからがよいでしょう。
+ここまでで、赤ちゃん用アルバムアプリの仕様を満たしました。
 
-これでひとまず仕様は満たせました。
+![SwiftUIのプレビュー](./images/1_22.jpg)
 
-![](./images/1_22.jpg)
-
-プレビューもされてるし、実行すると15秒毎に違う画像に変わります。これはSwiftStateFlowが15秒毎のFlowのデータ送出をSwiftにうまく伝えているからですね。
-
-iPadに入れて赤ちゃんに見せてあげたいと思います😊
+SwiftUIのプレビューが動作しており、iOS端末にインストールして実行すると15秒毎に違う画像に変わります。これは`SwiftStateFlow`が15秒毎のFlowのデータ送出をSwiftにうまく伝えているからです。
 
 ## Combineを使って改善する
 
 さて、ここまでで満足かというと、**本当に作りたかったものはこれじゃない**感があります。
 
-SwiftStateFlowが`onEach`を逐次横流ししてるだけじゃん！みたいな。
+`SwiftStateFlow`でも、Flowの強みである様々なオペレーター（`map`、`filter`、`onEach`、`reduce`など）を使いたいです。
 
-Flowの強みである様々なオペレーター（`map`、`filter`、`onEach`、`reduce`など）を使いたいのです。
+とはいえ、Flowと同じオペレーターをSwiftで1から実装するのは大変です。`shared.h`に定義されている`Kotlinx_coroutines_core`系の型を使ってFlowを操作するのも、根気やリスクが伴いそうです。
 
-とはいえFlowと同じオペレーターをSwiftで1から実装するのは大変だし、shared.hに定義されてるKotlinx_coroutines_core系の型を使ってFlowの扉をこじ開けるのもちょっと根気が必要そうです。
+また、無理してFlowに合わせるのではなく、SwiftならSwiftらしい実装をしたいです。
 
-そもそも、無理してFlowに合わせるより、SwiftならSwiftらしい実装をしたいですよね。
+そこで、Swift標準の非同期フレームワークである**Combine**の出番です。
 
-そこで、Swift標準の非同期フレームワークである**Combine**の出番です！
-
-AlbumViewModelを以下のように書き直します。
+`AlbumViewModel`を、以下のように書き直します。
 
 #### AlbumViewModel.swift（ViewModel）
 
@@ -823,12 +815,13 @@ final class NumberStateSubscription<S: Subscriber>: Subscription
 
 Combineの仕組みは省略しますが、必要なPublisherとSubscriptionを作りました。
 
-最も肝心なのは`func startSubscribe()`の部分です。受け取った数字を`map`で文字列加工して、直接`photoName`にバインドしています。この数行だけでロジックから流れてきたデータをView向きに加工して再描画まで行っていることを考えれば、とてもシンプルですよね。もちろん`map`以外のCombineオペレーターも使用可能です。
+最も肝心なのは、`func startSubscribe()`の部分です。受け取った数字を`map`で文字列加工して、直接`photoName`にバインドしています。
+この数行だけで、ロジックから流れてきたデータをView向きに加工して再描画まで行っていることを考えれば、とてもシンプルです。標準フレームワークのオペレーターを使用できる大きな利点です。もちろん`map`以外のCombineオペレーターも使用可能です。
 
-これが標準フレームワークのオペレーターを使用できる大きな利点です。改良前の`onEach`を横流しするだけのViewModelもコード量は少ないのですが、複雑な実装になると`observe`部分が膨れ上がり、じわじわと痛めつけられるでしょう。
+改良前のViewModelもコード量は少ないのですが、Stateを表示向けに変換する処理を適宜追加する必要があるので、複雑な実装になると`observe`部分がじわじわと膨れ上がることが予想されます。
 
-また、Publisherを何かに`assign`するとCancellableオブジェクトが取れるので、その参照を取っておいてViewModelが解放される際に監視を止めることも可能です。改良前は直接Interactorを介してSwiftStateの`cancel`を呼ぶ必要があり、複数箇所で監視している場合の考慮ができていませんでした。
+また、Publisherを`@Published`変数に`assign`するとCancellableオブジェクトが取れるので、その参照を取っておき、ViewModelが解放される際に監視を止めます。改良前は直接Interactorを介してSwiftStateの`cancel`を呼ぶ必要があり、クリーンアーキテクチャーを意識しているのに、責務の境界が曖昧になっていました。
 
 ## まとめ
 
-まとめる力などもう残ってない（笑）2022/1/11(火)に続きを書きます。
+正直、何を書けばいいのかわからない。できればこのまま終えたい。
